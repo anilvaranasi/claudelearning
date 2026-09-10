@@ -3,8 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Claude Code Training App â€” dotenv</title>
+  <title>Claude Training — Anthropic SDK</title>
   <style>
+    :root {
+      --accent:     #22c55e;
+      --accent-dim: #14532d;
+      --tag-bg:     #052e16;
+      --tag-border: #166534;
+      --tag-color:  #4ade80;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -34,7 +42,7 @@
       gap: 12px;
     }
 
-    /* â”€â”€ Chat window â”€â”€ */
+    /* ── Chat window ── */
     #chatWindow {
       background: #161b22;
       border: 1px solid #30363d;
@@ -49,14 +57,14 @@
     }
 
     #chatWindow:empty::before {
-      content: "Start a conversationâ€¦";
+      content: "Start a conversation…";
       color: #484f58;
       font-size: 0.9rem;
       align-self: center;
       margin: auto;
     }
 
-    /* â”€â”€ Message bubbles â”€â”€ */
+    /* ── Message bubbles ── */
     .msg { display: flex; flex-direction: column; max-width: 88%; }
 
     .msg.user  { align-self: flex-end; align-items: flex-end; }
@@ -72,7 +80,7 @@
     }
 
     .msg.user .bubble {
-      background: #3b82d4;
+      background: var(--accent);
       color: #fff;
       border-bottom-right-radius: 3px;
     }
@@ -91,7 +99,7 @@
       padding: 0 4px;
     }
 
-    /* â”€â”€ Input area â”€â”€ */
+    /* ── Input area ── */
     .input-card {
       background: #161b22;
       border: 1px solid #30363d;
@@ -115,7 +123,7 @@
       transition: border-color 0.2s;
     }
 
-    textarea:focus { border-color: #3b82d4; }
+    textarea:focus { border-color: var(--accent); }
 
     .actions {
       display: flex;
@@ -135,7 +143,7 @@
     .spinner {
       display: none;
       width: 14px; height: 14px;
-      border: 2px solid #3b82d4;
+      border: 2px solid var(--accent);
       border-top-color: transparent;
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
@@ -171,12 +179,12 @@
       color: #c9d1d9;
       border: 1px solid #30363d;
     }
-    #sendBtn { background: #3b82d4; color: #fff; }
+    #sendBtn { background: var(--accent); color: #fff; }
     #sendBtn:hover:not(:disabled) { opacity: 0.88; }
 
     .error-text { color: #f85149 !important; }
 
-    /* â”€â”€ Info bar â”€â”€ */
+    /* ── Info bar ── */
     #infoBar {
       display: flex;
       align-items: center;
@@ -209,7 +217,7 @@
       background: #30363d;
     }
 
-    #infoBar .token-in  { color: #3b82d4; font-weight: 600; }
+    #infoBar .token-in  { color: var(--accent); font-weight: 600; }
     #infoBar .token-out { color: #7c5cd8; font-weight: 600; }
     #infoBar .token-tot { color: #e6edf3; font-weight: 600; }
 
@@ -220,25 +228,255 @@
       gap: 6px;
     }
 
+    /* ── System prompt panel ── */
+    #systemPanel {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    #systemToggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #8b949e;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    #systemToggle:hover { color: #e6edf3; }
+    #systemToggle .arrow { font-size: 0.7rem; transition: transform 0.2s; }
+    #systemToggle.open .arrow { transform: rotate(180deg); }
+
+    #systemBody { display: none; padding: 0 16px 14px; }
+    #systemBody.open { display: block; }
+
+    #systemInput {
+      width: 100%;
+      min-height: 90px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e6edf3;
+      font-family: inherit;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      padding: 10px 12px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #systemInput:focus { border-color: var(--accent); }
+    #systemInput:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .system-hint {
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: #484f58;
+    }
+
+    /* ── Model selector ── */
+    .model-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .model-row label {
+      font-size: 0.75rem;
+      color: #57606a;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    #modelSelect {
+      flex: 1;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e6edf3;
+      font-family: inherit;
+      font-size: 0.88rem;
+      padding: 6px 10px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    #modelSelect:focus  { border-color: var(--accent); }
+    #modelSelect:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Temperature slider ── */
+    .temp-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .temp-row label {
+      font-size: 0.75rem;
+      color: #57606a;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    #tempSlider {
+      flex: 1;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    #tempSlider:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #tempValue {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 28px;
+      text-align: right;
+    }
+
+    /* ── Prefill / stop sequences ── */
+    .field-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .field-row label {
+      font-size: 0.75rem;
+      color: #57606a;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+      white-space: nowrap;
+      min-width: 110px;
+    }
+
+    .field-row input[type="text"] {
+      flex: 1;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e6edf3;
+      font-family: monospace;
+      font-size: 0.85rem;
+      padding: 6px 10px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .field-row input[type="text"]:focus    { border-color: var(--accent); }
+    .field-row input[type="text"]:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── JSON result block ── */
+    .json-block {
+      margin-top: 8px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-family: "Consolas", "Menlo", monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: #e6edf3;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    .json-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      margin-top: 8px;
+      margin-bottom: 4px;
+    }
+
     footer { margin-top: 32px; font-size: 0.75rem; color: #484f58; }
+
+    /* ── App identity tag ── */
+    .app-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: var(--tag-bg);
+      border: 1px solid var(--tag-border);
+      color: var(--tag-color);
+      margin-top: 8px;
+    }
+
+    /* ── User bubble uses accent colour ── */
+    .msg.user .bubble { background: var(--accent); }
   </style>
 </head>
 <body>
   <header>
-    <h1>ðŸ¤– Claude Code Training App</h1>
-    <p>Using requests + python-dotenv Â· Multi-turn conversation</p>
+    <h1>🤖 Claude Code Training App</h1>
+    <span class="app-tag">Anthropic Python SDK · python-dotenv</span>
   </header>
 
   <div class="container">
+    <!-- System prompt panel -->
+    <div id="systemPanel">
+      <button id="systemToggle" type="button">
+        <span>⚙ System Prompt</span>
+        <span class="arrow">▼</span>
+      </button>
+      <div id="systemBody">
+        <textarea id="systemInput" placeholder="You are a helpful assistant…"></textarea>
+        <div class="model-row">
+          <label for="modelSelect">Model</label>
+          <select id="modelSelect">
+            {% for m in models %}
+            <option value="{{ m }}" {% if m == default_model %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field-row">
+          <label for="prefillInput">Prefill</label>
+          <input type="text" id="prefillInput" placeholder="e.g. &#96;&#96;&#96;json" />
+        </div>
+        <div class="field-row">
+          <label for="stopInput">Stop Sequences</label>
+          <input type="text" id="stopInput" placeholder="e.g. &#96;&#96;&#96; (comma separated)" />
+        </div>
+        <div class="temp-row">
+          <label for="tempSlider">Temperature</label>
+          <input type="range" id="tempSlider" min="0" max="1" step="0.1" value="1.0" />
+          <span id="tempValue">1.0</span>
+        </div>
+        <p class="system-hint">Locked once the first message is sent. Click "New Chat" to change it.</p>
+      </div>
+    </div>
+
     <!-- Info bar: model + token usage -->
     <div id="infoBar">
       <span class="info-label">Model</span>
-      <span class="info-value" id="modelDisplay">â€”</span>
+      <span class="info-value" id="modelDisplay">—</span>
       <div class="divider"></div>
       <span class="info-label">Tokens</span>
-      <span class="token-in"  id="tokIn">â†‘ â€”</span>
-      <span class="token-out" id="tokOut">â†“ â€”</span>
-      <span class="token-tot" id="tokTot">= â€”</span>
+      <span class="token-in"  id="tokIn">↑ —</span>
+      <span class="token-out" id="tokOut">↓ —</span>
+      <span class="token-tot" id="tokTot">= —</span>
       <div id="statusIndicator">
         <div class="spinner" id="spinner"></div>
         <span id="statusText"></span>
@@ -248,17 +486,17 @@
     <div id="chatWindow"></div>
 
     <div class="input-card">
-      <textarea id="promptInput" placeholder="Type a messageâ€¦ (Ctrl+Enter to send)"></textarea>
+      <textarea id="promptInput" placeholder="Type a message… (Ctrl+Enter to send)"></textarea>
       <div class="actions">
         <div class="btn-group">
           <button id="clearBtn" type="button">New Chat</button>
-          <button id="sendBtn" type="button">Send â†’</button>
+          <button id="sendBtn" type="button">Send →</button>
         </div>
       </div>
     </div>
   </div>
 
-  <footer>Claude Code Training Â· IBM Internal</footer>
+  <footer>Claude Code Training · IBM Internal</footer>
 
   <script>
     const promptInput  = document.getElementById("promptInput");
@@ -271,6 +509,25 @@
     const tokIn        = document.getElementById("tokIn");
     const tokOut       = document.getElementById("tokOut");
     const tokTot       = document.getElementById("tokTot");
+    const systemToggle = document.getElementById("systemToggle");
+    const systemBody   = document.getElementById("systemBody");
+    const systemInput  = document.getElementById("systemInput");
+    const modelSelect  = document.getElementById("modelSelect");
+    const prefillInput = document.getElementById("prefillInput");
+    const stopInput    = document.getElementById("stopInput");
+    const tempSlider   = document.getElementById("tempSlider");
+    const tempValue    = document.getElementById("tempValue");
+
+    // Toggle system prompt panel open/close
+    systemToggle.addEventListener("click", () => {
+      systemToggle.classList.toggle("open");
+      systemBody.classList.toggle("open");
+    });
+
+    // Live temperature display
+    tempSlider.addEventListener("input", () => {
+      tempValue.textContent = parseFloat(tempSlider.value).toFixed(1);
+    });
 
     function addMessage(role, text) {
       const msg = document.createElement("div");
@@ -295,10 +552,16 @@
       await fetch("/clear", { method: "POST" });
       chatWindow.innerHTML = "";
       statusText.textContent = "";
-      modelDisplay.textContent = "â€”";
-      tokIn.textContent  = "â†‘ â€”";
-      tokOut.textContent = "â†“ â€”";
-      tokTot.textContent = "= â€”";
+      modelDisplay.textContent = "—";
+      tokIn.textContent  = "↑ —";
+      tokOut.textContent = "↓ —";
+      tokTot.textContent = "= —";
+      // Unlock controls on new chat
+      systemInput.disabled  = false;
+      modelSelect.disabled  = false;
+      prefillInput.disabled = false;
+      stopInput.disabled    = false;
+      tempSlider.disabled   = false;
       promptInput.value = "";
       promptInput.focus();
     });
@@ -314,17 +577,34 @@
       sendBtn.disabled = true;
       clearBtn.disabled = true;
       spinner.classList.add("active");
-      statusText.textContent = "Thinkingâ€¦";
+      statusText.textContent = "Thinking…";
       statusText.className = "";
 
       // Create empty assistant bubble to stream into
       const assistantBubble = addMessage("assistant", "");
 
       try {
+        // Lock controls after first send
+        systemInput.disabled  = true;
+        modelSelect.disabled  = true;
+        prefillInput.disabled = true;
+        stopInput.disabled    = true;
+        tempSlider.disabled   = true;
+
+        // Do NOT pre-populate the bubble — Claude will include prefill in its response
+        const prefill = prefillInput.value.trim();
+
         const res = await fetch("/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({
+            prompt,
+            model:          modelSelect.value,
+            system_prompt:  systemInput.value.trim(),
+            prefill:        prefill,
+            stop_sequences: stopInput.value.trim(),
+            temperature:    parseFloat(tempSlider.value),
+          }),
         });
 
         if (!res.ok) {
@@ -336,9 +616,9 @@
           return;
         }
 
-        // Stream open â€” hide spinner
+        // Stream open — hide spinner
         spinner.classList.remove("active");
-        statusText.textContent = "Respondingâ€¦";
+        statusText.textContent = "Responding…";
 
         const reader  = res.body.getReader();
         const decoder = new TextDecoder();
@@ -366,16 +646,37 @@
               assistantBubble.textContent += event.text;
               chatWindow.scrollTop = chatWindow.scrollHeight;
             } else if (event.type === "usage") {
-              tokIn.textContent  = `â†‘ ${event.input.toLocaleString()}`;
-              tokOut.textContent = `â†“ ${event.output.toLocaleString()}`;
+              tokIn.textContent  = `↑ ${event.input.toLocaleString()}`;
+              tokOut.textContent = `↓ ${event.output.toLocaleString()}`;
               tokTot.textContent = `= ${(event.input + event.output).toLocaleString()} tokens`;
             } else if (event.type === "error") {
               assistantBubble.textContent = event.text;
               assistantBubble.style.color = "#f85149";
               statusText.textContent = "Error";
               statusText.className = "error-text";
+            } else if (event.type === "json_result") {
+              // Render parsed JSON in a styled code block below the bubble
+              const msgDiv = assistantBubble.closest(".msg");
+              const label = document.createElement("div");
+              label.className = "json-label";
+              label.textContent = "✓ Parsed JSON";
+              const block = document.createElement("pre");
+              block.className = "json-block";
+              block.textContent = event.json;
+              msgDiv.appendChild(label);
+              msgDiv.appendChild(block);
+              chatWindow.scrollTop = chatWindow.scrollHeight;
             } else if (event.type === "done") {
               statusText.textContent = "Done";
+              // If prefill was set and response contains a code block, strip trailing text
+              if (prefill && assistantBubble.textContent.includes("```")) {
+                const text = assistantBubble.textContent;
+                const lastFence = text.lastIndexOf("```");
+                const afterFence = text.slice(lastFence + 3).trim();
+                if (afterFence.length > 0 && !afterFence.startsWith("{") && !afterFence.startsWith("[")) {
+                  assistantBubble.textContent = text.slice(0, lastFence + 3);
+                }
+              }
             }
           }
         }
@@ -389,7 +690,7 @@
         sendBtn.disabled = false;
         clearBtn.disabled = false;
         spinner.classList.remove("active");
-        if (statusText.textContent === "Respondingâ€¦") statusText.textContent = "Done";
+        if (statusText.textContent === "Responding…") statusText.textContent = "Done";
         promptInput.focus();
       }
     });
@@ -400,4 +701,3 @@
   </script>
 </body>
 </html>
-

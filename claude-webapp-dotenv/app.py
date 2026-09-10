@@ -12,9 +12,30 @@ app = Flask(__name__)
 
 BASE_URL   = os.getenv("ANTHROPIC_BASE_URL", "https://api.servicesessentials.ibm.com")
 AUTH_TOKEN = os.getenv("ANTHROPIC_AUTH_TOKEN", "")
-MODEL      = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5")
+DEFAULT_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5")
+
+AVAILABLE_MODELS = [
+    "claude-sonnet-5",
+    "claude-opus-4-8",
+    "claude-haiku-4-5",
+]
 
 MESSAGES_URL = f"{BASE_URL.rstrip('/')}/v1/messages"
+
+
+def extract_json(text):
+    """Extract and parse JSON from a response, stripping code fences if present."""
+    # Strip ```json ... ``` or ``` ... ``` fences
+    stripped = text.strip()
+    if stripped.startswith("```"):
+        lines = stripped.split("\n")
+        # Remove opening fence line (```json or ```)
+        lines = lines[1:]
+        # Remove closing fence if present
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        stripped = "\n".join(lines).strip()
+    return json.loads(stripped)
 
 API_HEADERS = {
     "x-api-key": AUTH_TOKEN,
@@ -33,8 +54,11 @@ def get_session_id():
 
 @app.route("/")
 def index():
-    resp = make_response(render_template("index.html"))
-    # Assign a session ID cookie if the browser doesn't have one yet
+    resp = make_response(render_template(
+        "index.html",
+        models=AVAILABLE_MODELS,
+        default_model=DEFAULT_MODEL,
+    ))
     if not request.cookies.get("chat_session"):
         resp.set_cookie("chat_session", str(uuid.uuid4()), samesite="Lax")
     return resp
@@ -56,20 +80,36 @@ def chat():
     if not prompt:
         return jsonify({"error": "Prompt cannot be empty."}), 400
 
+    model          = data.get("model", DEFAULT_MODEL).strip()
+    if model not in AVAILABLE_MODELS:
+        model = DEFAULT_MODEL
+    system_prompt  = data.get("system_prompt", "").strip()
+    prefill        = data.get("prefill", "").strip()
+    stop_sequences = [s.strip() for s in data.get("stop_sequences", "").split(",") if s.strip()]
+
     sid = get_session_id()
     if not sid:
         return jsonify({"error": "No session cookie. Please refresh the page."}), 400
 
     # Load history, append new user message
     history = conversations.get(sid, [])
-    history.append({"role": "user", "content": prompt})
+
+    # Prefill: append as suffix to user message (IBM endpoint doesn't support assistant prefill)
+    user_content = prompt
+    if prefill:
+        user_content = f"{prompt}\n\nRespond starting with: {prefill}"
+    history.append({"role": "user", "content": user_content})
 
     payload = {
-        "model": MODEL,
+        "model": model,
         "max_tokens": 4096,
         "stream": True,
         "messages": history,
     }
+    if system_prompt:
+        payload["system"] = system_prompt
+    if stop_sequences:
+        payload["stop_sequences"] = stop_sequences
 
     def generate():
         full_response = []
@@ -77,8 +117,11 @@ def chat():
             print(f"\n{'='*60}")
             print(f"[DOTENV] [REQUEST] session: {sid[:8]}...")
             print(f"[DOTENV] [REQUEST] turns:   {len(history)}")
-            print(f"[DOTENV] [REQUEST] prompt:  {prompt!r}")
-            print(f"[DOTENV] [REQUEST] model:   {MODEL}")
+            print(f"[DOTENV] [REQUEST] prompt:         {prompt!r}")
+            print(f"[DOTENV] [REQUEST] prefill:        {prefill!r}")
+            print(f"[DOTENV] [REQUEST] stop_sequences: {stop_sequences}")
+            print(f"[DOTENV] [REQUEST] system:         {system_prompt!r}")
+            print(f"[DOTENV] [REQUEST] model:          {model}")
             print(f"{'='*60}")
 
             with requests.post(
@@ -118,7 +161,7 @@ def chat():
                     event_type = event.get("type")
 
                     if not model_sent and event_type == "message_start":
-                        model_name = event.get("message", {}).get("model", MODEL)
+                        model_name = event.get("message", {}).get("model", model)
                         print(f"[DOTENV] [RESPONSE] model: {model_name}")
                         yield f"data: {json.dumps({'type': 'model', 'model': model_name})}\n\n"
                         model_sent = True
@@ -137,12 +180,23 @@ def chat():
                         print(f"[DOTENV] [TOKENS] input={input_tokens} output={output_tokens} total={input_tokens + output_tokens}")
                         yield f"data: {json.dumps({'type': 'usage', 'input': input_tokens, 'output': output_tokens})}\n\n"
 
-            # Persist completed assistant reply into in-memory store
+            # Persist completed assistant reply
             assistant_text = "".join(full_response)
             history.append({"role": "assistant", "content": assistant_text})
             conversations[sid] = history
             print(f"[DOTENV] [HISTORY] saved {len(history)} messages for session {sid[:8]}...")
             print(f"[DOTENV] [RESPONSE] full text:\n{assistant_text}")
+
+            # Attempt JSON extraction if prefill suggests structured output
+            if prefill:
+                try:
+                    clean_json = extract_json(assistant_text)
+                    pretty = json.dumps(clean_json, indent=2)
+                    print(f"[DOTENV] [JSON] parsed successfully")
+                    yield f"data: {json.dumps({'type': 'json_result', 'json': pretty})}\n\n"
+                except (json.JSONDecodeError, ValueError):
+                    print(f"[DOTENV] [JSON] response is not valid JSON — skipping")
+
             print(f"{'='*60}\n")
 
         except Exception as e:
