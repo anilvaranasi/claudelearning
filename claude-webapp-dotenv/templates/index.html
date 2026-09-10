@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Claude Code Training App — dotenv</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    header h1 { font-size: 1.6rem; font-weight: 700; color: #f0f6fc; }
+    header p  { margin-top: 6px; color: #8b949e; font-size: 0.9rem; }
+
+    .container {
+      width: 100%;
+      max-width: 760px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ── Chat window ── */
+    #chatWindow {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 16px;
+      min-height: 200px;
+      max-height: 520px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #chatWindow:empty::before {
+      content: "Start a conversation…";
+      color: #484f58;
+      font-size: 0.9rem;
+      align-self: center;
+      margin: auto;
+    }
+
+    /* ── Message bubbles ── */
+    .msg { display: flex; flex-direction: column; max-width: 88%; }
+
+    .msg.user  { align-self: flex-end; align-items: flex-end; }
+    .msg.assistant { align-self: flex-start; align-items: flex-start; }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.93rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .msg.user .bubble {
+      background: #3b82d4;
+      color: #fff;
+      border-bottom-right-radius: 3px;
+    }
+
+    .msg.assistant .bubble {
+      background: #21262d;
+      color: #e6edf3;
+      border: 1px solid #30363d;
+      border-bottom-left-radius: 3px;
+    }
+
+    .msg-meta {
+      font-size: 0.72rem;
+      color: #484f58;
+      margin-top: 4px;
+      padding: 0 4px;
+    }
+
+    /* ── Input area ── */
+    .input-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e6edf3;
+      font-family: inherit;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      padding: 10px 12px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus { border-color: #3b82d4; }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: #8b949e;
+    }
+
+    .spinner {
+      display: none;
+      width: 14px; height: 14px;
+      border: 2px solid #3b82d4;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    .spinner.active { display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #modelBadge {
+      font-size: 0.72rem;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      padding: 2px 7px;
+      color: #8b949e;
+      display: none;
+    }
+
+    .btn-group { display: flex; gap: 8px; }
+
+    button {
+      padding: 8px 18px;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    #clearBtn {
+      background: #21262d;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+    }
+    #sendBtn { background: #3b82d4; color: #fff; }
+    #sendBtn:hover:not(:disabled) { opacity: 0.88; }
+
+    .error-text { color: #f85149 !important; }
+
+    /* ── Info bar ── */
+    #infoBar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 0.82rem;
+      color: #8b949e;
+      min-height: 38px;
+    }
+
+    #infoBar .info-label {
+      font-weight: 600;
+      color: #57606a;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
+
+    #infoBar .info-value {
+      color: #e6edf3;
+      font-weight: 600;
+    }
+
+    #infoBar .divider {
+      width: 1px;
+      height: 16px;
+      background: #30363d;
+    }
+
+    #infoBar .token-in  { color: #3b82d4; font-weight: 600; }
+    #infoBar .token-out { color: #7c5cd8; font-weight: 600; }
+    #infoBar .token-tot { color: #e6edf3; font-weight: 600; }
+
+    #infoBar #statusIndicator {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    footer { margin-top: 32px; font-size: 0.75rem; color: #484f58; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🤖 Claude Code Training App</h1>
+    <p>Using requests + python-dotenv · Multi-turn conversation</p>
+  </header>
+
+  <div class="container">
+    <!-- Info bar: model + token usage -->
+    <div id="infoBar">
+      <span class="info-label">Model</span>
+      <span class="info-value" id="modelDisplay">—</span>
+      <div class="divider"></div>
+      <span class="info-label">Tokens</span>
+      <span class="token-in"  id="tokIn">↑ —</span>
+      <span class="token-out" id="tokOut">↓ —</span>
+      <span class="token-tot" id="tokTot">= —</span>
+      <div id="statusIndicator">
+        <div class="spinner" id="spinner"></div>
+        <span id="statusText"></span>
+      </div>
+    </div>
+
+    <div id="chatWindow"></div>
+
+    <div class="input-card">
+      <textarea id="promptInput" placeholder="Type a message… (Ctrl+Enter to send)"></textarea>
+      <div class="actions">
+        <div class="btn-group">
+          <button id="clearBtn" type="button">New Chat</button>
+          <button id="sendBtn" type="button">Send →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Claude Code Training · IBM Internal</footer>
+
+  <script>
+    const promptInput  = document.getElementById("promptInput");
+    const sendBtn      = document.getElementById("sendBtn");
+    const clearBtn     = document.getElementById("clearBtn");
+    const chatWindow   = document.getElementById("chatWindow");
+    const spinner      = document.getElementById("spinner");
+    const statusText   = document.getElementById("statusText");
+    const modelDisplay = document.getElementById("modelDisplay");
+    const tokIn        = document.getElementById("tokIn");
+    const tokOut       = document.getElementById("tokOut");
+    const tokTot       = document.getElementById("tokTot");
+
+    function addMessage(role, text) {
+      const msg = document.createElement("div");
+      msg.className = `msg ${role}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = text;
+
+      const meta = document.createElement("div");
+      meta.className = "msg-meta";
+      meta.textContent = role === "user" ? "You" : "Claude";
+
+      msg.appendChild(bubble);
+      msg.appendChild(meta);
+      chatWindow.appendChild(msg);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+      return bubble; // return bubble so we can append streaming tokens
+    }
+
+    clearBtn.addEventListener("click", async () => {
+      await fetch("/clear", { method: "POST" });
+      chatWindow.innerHTML = "";
+      statusText.textContent = "";
+      modelDisplay.textContent = "—";
+      tokIn.textContent  = "↑ —";
+      tokOut.textContent = "↓ —";
+      tokTot.textContent = "= —";
+      promptInput.value = "";
+      promptInput.focus();
+    });
+
+    sendBtn.addEventListener("click", async () => {
+      const prompt = promptInput.value.trim();
+      if (!prompt) return;
+
+      // Show user bubble
+      addMessage("user", prompt);
+      promptInput.value = "";
+
+      sendBtn.disabled = true;
+      clearBtn.disabled = true;
+      spinner.classList.add("active");
+      statusText.textContent = "Thinking…";
+      statusText.className = "";
+
+      // Create empty assistant bubble to stream into
+      const assistantBubble = addMessage("assistant", "");
+
+      try {
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          assistantBubble.textContent = data.error || "Unknown error.";
+          assistantBubble.style.color = "#f85149";
+          statusText.textContent = "Error";
+          statusText.className = "error-text";
+          return;
+        }
+
+        // Stream open — hide spinner
+        spinner.classList.remove("active");
+        statusText.textContent = "Responding…";
+
+        const reader  = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop();
+
+          for (const line of lines) {
+            if (!line.startsWith("data:")) continue;
+            const raw = line.slice(5).trim();
+            if (!raw) continue;
+
+            let event;
+            try { event = JSON.parse(raw); } catch { continue; }
+
+            if (event.type === "model") {
+              modelDisplay.textContent = event.model;
+            } else if (event.type === "text") {
+              assistantBubble.textContent += event.text;
+              chatWindow.scrollTop = chatWindow.scrollHeight;
+            } else if (event.type === "usage") {
+              tokIn.textContent  = `↑ ${event.input.toLocaleString()}`;
+              tokOut.textContent = `↓ ${event.output.toLocaleString()}`;
+              tokTot.textContent = `= ${(event.input + event.output).toLocaleString()} tokens`;
+            } else if (event.type === "error") {
+              assistantBubble.textContent = event.text;
+              assistantBubble.style.color = "#f85149";
+              statusText.textContent = "Error";
+              statusText.className = "error-text";
+            } else if (event.type === "done") {
+              statusText.textContent = "Done";
+            }
+          }
+        }
+
+      } catch (err) {
+        assistantBubble.textContent = "Failed to reach the server. Is Flask running?";
+        assistantBubble.style.color = "#f85149";
+        statusText.textContent = "Error";
+        statusText.className = "error-text";
+      } finally {
+        sendBtn.disabled = false;
+        clearBtn.disabled = false;
+        spinner.classList.remove("active");
+        if (statusText.textContent === "Responding…") statusText.textContent = "Done";
+        promptInput.focus();
+      }
+    });
+
+    promptInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) sendBtn.click();
+    });
+  </script>
+</body>
+</html>
