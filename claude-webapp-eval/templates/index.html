@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Claude Prompt Evaluation</title>
+  <style>
+    :root {
+      --accent:     #f59e0b;
+      --tag-bg:     #1c1408;
+      --tag-border: #78350f;
+      --tag-color:  #fbbf24;
+      --pass:       #22c55e;
+      --fail:       #f85149;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px;
+    }
+
+    header { text-align: center; margin-bottom: 24px; }
+    header h1 { font-size: 1.6rem; font-weight: 700; color: #f0f6fc; }
+
+    .app-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: var(--tag-bg);
+      border: 1px solid var(--tag-border);
+      color: var(--tag-color);
+      margin-top: 8px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+
+    .card-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #57606a;
+      margin-bottom: 14px;
+    }
+
+    /* ── Config row ── */
+    .config-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .config-row .field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 160px; }
+    .config-row label { font-size: 0.72rem; color: #57606a; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+
+    select, input[type="text"], textarea {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e6edf3;
+      font-family: inherit;
+      font-size: 0.88rem;
+      padding: 7px 10px;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+    select:focus, input[type="text"]:focus, textarea:focus { border-color: var(--accent); }
+
+    /* ── Test cases table ── */
+    .cases-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr 80px;
+      gap: 8px;
+      padding: 0 0 8px;
+      border-bottom: 1px solid #30363d;
+      margin-bottom: 10px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #57606a;
+      font-weight: 600;
+    }
+
+    .case-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 80px;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
+    .case-row textarea {
+      min-height: 60px;
+      resize: vertical;
+      font-size: 0.83rem;
+    }
+
+    .del-btn {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #f85149;
+      border-radius: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      width: 100%;
+      transition: background 0.15s;
+    }
+    .del-btn:hover { background: #3d1a1a; }
+
+    .add-btn {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #8b949e;
+      border-radius: 6px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-top: 6px;
+      transition: color 0.15s;
+    }
+    .add-btn:hover { color: #e6edf3; }
+
+    /* ── Run button ── */
+    #runBtn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 28px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      align-self: flex-start;
+    }
+    #runBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+    #runBtn:hover:not(:disabled) { opacity: 0.85; }
+
+    /* ── Summary bar ── */
+    #summaryBar {
+      display: none;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 16px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+    #summaryBar.visible { display: flex; }
+
+    .sum-label { color: #57606a; font-size: 0.72rem; text-transform: uppercase; font-weight: 600; }
+    .sum-pass  { color: var(--pass); font-weight: 700; font-size: 1.1rem; }
+    .sum-fail  { color: var(--fail); font-weight: 700; font-size: 1.1rem; }
+    .sum-rate  { color: var(--accent); font-weight: 700; font-size: 1.1rem; }
+
+    /* ── Results table ── */
+    #resultsCard { display: none; }
+    #resultsCard.visible { display: block; }
+
+    .result-row {
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      background: #0d1117;
+    }
+
+    .result-row.pass { border-left: 3px solid var(--pass); }
+    .result-row.fail { border-left: 3px solid var(--fail); }
+    .result-row.running { border-left: 3px solid var(--accent); opacity: 0.6; }
+    .result-row.error { border-left: 3px solid #f85149; }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .badge.pass   { background: #0d2818; color: var(--pass); border: 1px solid #166534; }
+    .badge.fail   { background: #2d0f0f; color: var(--fail); border: 1px solid #7f1d1d; }
+    .badge.run    { background: #1c1408; color: var(--accent); border: 1px solid #78350f; }
+    .badge.error  { background: #2d0f0f; color: #f85149; border: 1px solid #7f1d1d; }
+
+    .score-stars { color: var(--accent); font-size: 0.85rem; }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      gap: 4px 10px;
+      font-size: 0.83rem;
+    }
+    .result-grid .lbl { color: #57606a; font-weight: 600; padding-top: 2px; }
+    .result-grid .val { color: #c9d1d9; word-break: break-word; }
+    .result-grid .reasoning { color: #8b949e; font-style: italic; }
+
+    .spinner {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border: 2px solid var(--accent);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 4px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer { margin-top: 32px; font-size: 0.75rem; color: #484f58; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🧪 Claude Prompt Evaluation</h1>
+    <span class="app-tag">LLM Testing · python-dotenv</span>
+  </header>
+
+  <div class="container">
+
+    <!-- Config -->
+    <div class="card">
+      <div class="card-title">Configuration</div>
+      <div class="config-row">
+        <div class="field">
+          <label for="modelSel">Model</label>
+          <select id="modelSel">
+            {% for m in models %}
+            <option value="{{ m }}" {% if m == default_model %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="methodSel">Grading Method</label>
+          <select id="methodSel">
+            <option value="contains">Contains — expected keyword in response</option>
+            <option value="exact">Exact — response equals expected exactly</option>
+            <option value="llm">LLM-as-Judge — Claude grades Claude</option>
+          </select>
+        </div>
+        <div class="field" style="flex:2">
+          <label for="systemInput">System Prompt (optional)</label>
+          <input type="text" id="systemInput" placeholder="You are a helpful assistant…" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Test cases -->
+    <div class="card">
+      <div class="card-title">Test Cases</div>
+      <div class="cases-header">
+        <span>Prompt</span>
+        <span>Expected (keyword / exact answer)</span>
+        <span></span>
+      </div>
+      <div id="casesContainer"></div>
+      <button class="add-btn" id="addBtn">+ Add Test Case</button>
+    </div>
+
+    <button id="runBtn" type="button">▶ Run Evaluation</button>
+
+    <!-- Summary -->
+    <div id="summaryBar">
+      <div><div class="sum-label">Passed</div><div class="sum-pass" id="sumPass">—</div></div>
+      <div><div class="sum-label">Failed</div><div class="sum-fail" id="sumFail">—</div></div>
+      <div><div class="sum-label">Pass Rate</div><div class="sum-rate" id="sumRate">—</div></div>
+      <div><div class="sum-label">Method</div><div style="color:#8b949e" id="sumMethod">—</div></div>
+      <div><div class="sum-label">Model</div><div style="color:#8b949e" id="sumModel">—</div></div>
+    </div>
+
+    <!-- Results -->
+    <div class="card" id="resultsCard">
+      <div class="card-title">Results</div>
+      <div id="resultsContainer"></div>
+    </div>
+
+  </div>
+
+  <footer>Claude Code Training · IBM Internal</footer>
+
+  <script>
+    const casesContainer  = document.getElementById("casesContainer");
+    const resultsContainer = document.getElementById("resultsContainer");
+    const addBtn          = document.getElementById("addBtn");
+    const runBtn          = document.getElementById("runBtn");
+    const modelSel        = document.getElementById("modelSel");
+    const methodSel       = document.getElementById("methodSel");
+    const systemInput     = document.getElementById("systemInput");
+    const summaryBar      = document.getElementById("summaryBar");
+    const resultsCard     = document.getElementById("resultsCard");
+
+    // ── Default test cases ──
+    const defaults = [
+      { prompt: "What is the capital of France?",             expected: "Paris" },
+      { prompt: "Generate a very short EventBridge rule as JSON", expected: "source" },
+      { prompt: "What is 2 + 2?",                            expected: "4" },
+    ];
+
+    function makeCase(prompt = "", expected = "") {
+      const row = document.createElement("div");
+      row.className = "case-row";
+      row.innerHTML = `
+        <textarea class="case-prompt" placeholder="Enter prompt…">${prompt}</textarea>
+        <textarea class="case-expected" placeholder="Expected keyword or answer…">${expected}</textarea>
+        <button class="del-btn" type="button">✕ Remove</button>
+      `;
+      row.querySelector(".del-btn").addEventListener("click", () => row.remove());
+      casesContainer.appendChild(row);
+    }
+
+    defaults.forEach(d => makeCase(d.prompt, d.expected));
+    addBtn.addEventListener("click", () => makeCase());
+
+    function stars(score) {
+      return "★".repeat(score) + "☆".repeat(5 - score);
+    }
+
+    function makeResultRow(index, status) {
+      const row = document.createElement("div");
+      row.className = `result-row ${status}`;
+      row.id = `result-${index}`;
+      if (status === "running") {
+        row.innerHTML = `
+          <div class="result-header">
+            <span class="badge run"><span class="spinner"></span>Running…</span>
+            <span style="color:#57606a;font-size:0.83rem">Test case ${index + 1}</span>
+          </div>`;
+      }
+      return row;
+    }
+
+    function fillResultRow(row, data) {
+      if (data.error) {
+        row.className = "result-row error";
+        row.innerHTML = `
+          <div class="result-header">
+            <span class="badge error">Error</span>
+            <span style="color:#f85149;font-size:0.83rem">${data.error}</span>
+          </div>
+          <div class="result-grid">
+            <span class="lbl">Prompt</span><span class="val">${data.prompt || "—"}</span>
+          </div>`;
+        return;
+      }
+      const cls = data.passed ? "pass" : "fail";
+      row.className = `result-row ${cls}`;
+      row.innerHTML = `
+        <div class="result-header">
+          <span class="badge ${cls}">${data.passed ? "✓ Pass" : "✗ Fail"}</span>
+          <span class="score-stars">${stars(data.score || 0)}</span>
+          <span style="color:#57606a;font-size:0.78rem">${data.method} · ${data.model}</span>
+        </div>
+        <div class="result-grid">
+          <span class="lbl">Prompt</span>     <span class="val">${data.prompt}</span>
+          <span class="lbl">Expected</span>   <span class="val">${data.expected || "—"}</span>
+          <span class="lbl">Response</span>   <span class="val">${data.response}</span>
+          <span class="lbl">Reasoning</span>  <span class="val reasoning">${data.reasoning || "—"}</span>
+        </div>`;
+    }
+
+    runBtn.addEventListener("click", async () => {
+      const rows = [...casesContainer.querySelectorAll(".case-row")];
+      if (rows.length === 0) return;
+
+      const cases = rows.map(r => ({
+        prompt:   r.querySelector(".case-prompt").value.trim(),
+        expected: r.querySelector(".case-expected").value.trim(),
+      })).filter(c => c.prompt);
+
+      if (cases.length === 0) return;
+
+      runBtn.disabled = true;
+      resultsContainer.innerHTML = "";
+      resultsCard.classList.add("visible");
+      summaryBar.classList.remove("visible");
+
+      const method = methodSel.value;
+      const model  = modelSel.value;
+      const system = systemInput.value.trim();
+
+      // Create placeholder rows
+      const resultRows = cases.map((_, i) => {
+        const row = makeResultRow(i, "running");
+        resultsContainer.appendChild(row);
+        return row;
+      });
+
+      let passed = 0, failed = 0;
+
+      // Run cases sequentially to avoid rate limits
+      for (let i = 0; i < cases.length; i++) {
+        try {
+          const res = await fetch("/run_case", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prompt:        cases[i].prompt,
+              expected:      cases[i].expected,
+              method,
+              model,
+              system_prompt: system,
+            }),
+          });
+          const data = await res.json();
+          fillResultRow(resultRows[i], data);
+          if (!data.error) {
+            data.passed ? passed++ : failed++;
+          }
+        } catch (err) {
+          fillResultRow(resultRows[i], { error: err.message, prompt: cases[i].prompt });
+        }
+        // Small delay between calls to avoid rate limiting
+        if (i < cases.length - 1) await new Promise(r => setTimeout(r, 2000));
+      }
+
+      // Show summary
+      const total = passed + failed;
+      const rate  = total > 0 ? Math.round((passed / total) * 100) : 0;
+      document.getElementById("sumPass").textContent   = passed;
+      document.getElementById("sumFail").textContent   = failed;
+      document.getElementById("sumRate").textContent   = `${rate}%`;
+      document.getElementById("sumMethod").textContent = method;
+      document.getElementById("sumModel").textContent  = model;
+      summaryBar.classList.add("visible");
+      runBtn.disabled = false;
+    });
+  </script>
+</body>
+</html>
