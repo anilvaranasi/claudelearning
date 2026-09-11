@@ -96,7 +96,7 @@
     /* ── Test cases table ── */
     .cases-header {
       display: grid;
-      grid-template-columns: 1fr 1fr 80px;
+      grid-template-columns: 1fr 1fr 110px 80px;
       gap: 8px;
       padding: 0 0 8px;
       border-bottom: 1px solid #30363d;
@@ -110,7 +110,7 @@
 
     .case-row {
       display: grid;
-      grid-template-columns: 1fr 1fr 80px;
+      grid-template-columns: 1fr 1fr 110px 80px;
       gap: 8px;
       margin-bottom: 8px;
       align-items: center;
@@ -249,7 +249,7 @@
 <body>
   <header>
     <h1>🧪 Claude Prompt Evaluation</h1>
-    <span class="app-tag">LLM Testing · python-dotenv</span>
+    <span class="app-tag">Telugu Chandas · LLM Testing · python-dotenv</span>
   </header>
 
   <div class="container">
@@ -276,7 +276,7 @@
         </div>
         <div class="field" style="flex:2">
           <label for="systemInput">System Prompt (optional)</label>
-          <input type="text" id="systemInput" placeholder="You are a helpful assistant…" />
+          <input type="text" id="systemInput" placeholder="You are a helpful assistant…" value="You are an expert in Telugu classical poetry and chandas (prosody). Answer precisely and in Telugu script where appropriate." />
         </div>
       </div>
     </div>
@@ -286,7 +286,8 @@
       <div class="card-title">Test Cases</div>
       <div class="cases-header">
         <span>Prompt</span>
-        <span>Expected (keyword / exact answer)</span>
+        <span>Expected (keyword / answer)</span>
+        <span>Method</span>
         <span></span>
       </div>
       <div id="casesContainer"></div>
@@ -327,24 +328,81 @@
 
     // ── Default test cases ──
     const defaults = [
-      { prompt: "What is the capital of France?",             expected: "Paris" },
-      { prompt: "Generate a very short EventBridge rule as JSON", expected: "source" },
-      { prompt: "What is 2 + 2?",                            expected: "4" },
+      // ── Telugu Chandas — Meter Knowledge (contains) ──
+      {
+        prompt: "Identify the chandas meter of this Telugu line: మందార మకరంద మాధుర్యమునఁ దేలు",
+        expected: "ఉత్పలమాల",
+        method: "contains"
+      },
+      {
+        prompt: "What is the gana sequence of Utpalamala (ఉత్పలమాల) chandas?",
+        expected: "భ ర న",
+        method: "contains"
+      },
+      {
+        prompt: "How many syllables (aksharas) are in each line of Utpalamala?",
+        expected: "20",
+        method: "contains"
+      },
+      {
+        prompt: "At which syllable position does the yati (caesura) fall in Utpalamala?",
+        expected: "10",
+        method: "contains"
+      },
+      {
+        prompt: "What is aadi prasa (ఆది ప్రాస) in Telugu chandas?",
+        expected: "రెండవ",
+        method: "contains"
+      },
+      // ── Telugu Chandas — Script Output (contains) ──
+      {
+        prompt: "Write 2 lines of Telugu poetry about the moon in Kandapadyam meter. Output in Telugu script only.",
+        expected: "చం",
+        method: "contains"
+      },
+      {
+        prompt: "Write a single line of Utpalamala about rain in Telugu script.",
+        expected: "వర్ష",
+        method: "contains"
+      },
+      // ── Telugu Chandas — Generation Quality (llm) ──
+      {
+        prompt: "Write a 4-line Kandapadyam (కందపద్యం) about sunrise in Telugu. Follow the correct gana rules and ensure lines 2 and 4 have matching end rhyme.",
+        expected: "A valid 4-line Telugu Kandapadyam with Telugu script, correct meter structure, and rhyme at the end of lines 2 and 4",
+        method: "llm"
+      },
+      {
+        prompt: "Analyse the chandas of: మందార మకరంద మాధుర్యమునఁ దేలు. State the meter name, gana sequence, syllable count per line, and yati position.",
+        expected: "Correctly identifies Utpalamala with Bha-Ra-Na gana sequence, 20 syllables per line, and yati at the 10th syllable",
+        method: "llm"
+      },
+      {
+        prompt: "What meter has the gana pattern: న జ భ జ జ జ ర (na-ja-bha-ja-ja-ja-ra)?",
+        expected: "శార్దూలం",
+        method: "contains"
+      },
     ];
 
-    function makeCase(prompt = "", expected = "") {
+    function makeCase(prompt = "", expected = "", method = "") {
+      const globalMethod = document.getElementById("methodSel").value;
+      const selectedMethod = method || globalMethod;
       const row = document.createElement("div");
       row.className = "case-row";
       row.innerHTML = `
         <textarea class="case-prompt" placeholder="Enter prompt…">${prompt}</textarea>
         <textarea class="case-expected" placeholder="Expected keyword or answer…">${expected}</textarea>
+        <select class="case-method">
+          <option value="contains" ${selectedMethod === 'contains' ? 'selected' : ''}>Contains</option>
+          <option value="exact"    ${selectedMethod === 'exact'    ? 'selected' : ''}>Exact</option>
+          <option value="llm"      ${selectedMethod === 'llm'      ? 'selected' : ''}>LLM Judge</option>
+        </select>
         <button class="del-btn" type="button">✕ Remove</button>
       `;
       row.querySelector(".del-btn").addEventListener("click", () => row.remove());
       casesContainer.appendChild(row);
     }
 
-    defaults.forEach(d => makeCase(d.prompt, d.expected));
+    defaults.forEach(d => makeCase(d.prompt, d.expected, d.method));
     addBtn.addEventListener("click", () => makeCase());
 
     function stars(score) {
@@ -401,6 +459,7 @@
       const cases = rows.map(r => ({
         prompt:   r.querySelector(".case-prompt").value.trim(),
         expected: r.querySelector(".case-expected").value.trim(),
+        method:   r.querySelector(".case-method").value,
       })).filter(c => c.prompt);
 
       if (cases.length === 0) return;
@@ -410,7 +469,6 @@
       resultsCard.classList.add("visible");
       summaryBar.classList.remove("visible");
 
-      const method = methodSel.value;
       const model  = modelSel.value;
       const system = systemInput.value.trim();
 
@@ -432,7 +490,7 @@
             body: JSON.stringify({
               prompt:        cases[i].prompt,
               expected:      cases[i].expected,
-              method,
+              method:        cases[i].method,
               model,
               system_prompt: system,
             }),
@@ -455,7 +513,7 @@
       document.getElementById("sumPass").textContent   = passed;
       document.getElementById("sumFail").textContent   = failed;
       document.getElementById("sumRate").textContent   = `${rate}%`;
-      document.getElementById("sumMethod").textContent = method;
+      document.getElementById("sumMethod").textContent = "per-case";
       document.getElementById("sumModel").textContent  = model;
       summaryBar.classList.add("visible");
       runBtn.disabled = false;
