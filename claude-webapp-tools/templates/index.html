@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Claude Tools Demo</title>
+  <style>
+    :root {
+      --accent:   #f59e0b;
+      --tool-clr: #3b82f6;
+      --res-clr:  #22c55e;
+      --err-clr:  #f85149;
+      --user-bg:  #1c2128;
+      --asst-bg:  #161b22;
+      --tool-bg:  #0c1a2e;
+      --res-bg:   #0d2818;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 0;
+    }
+
+    header { text-align: center; margin-bottom: 16px; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: #f0f6fc; }
+    .app-tag {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      padding: 3px 10px; border-radius: 20px; margin-top: 6px;
+      background: #1c1408; border: 1px solid #78350f; color: #fbbf24;
+    }
+
+    .shell {
+      width: 100%; max-width: 860px;
+      display: flex; flex-direction: column;
+      flex: 1; min-height: 0;
+      gap: 10px;
+      padding-bottom: 20px;
+    }
+
+    /* Config bar */
+    .config-bar {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
+      background: #161b22; border: 1px solid #30363d;
+      border-radius: 8px; padding: 12px 14px;
+    }
+    .cfg-field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+    .cfg-field label { font-size: 0.7rem; color: #57606a; text-transform: uppercase; font-weight: 600; letter-spacing: .05em; }
+    select, input[type="text"], textarea {
+      background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+      color: #e6edf3; font-family: inherit; font-size: 0.85rem;
+      padding: 6px 9px; outline: none; transition: border-color .2s; width: 100%;
+    }
+    select:focus, input:focus, textarea:focus { border-color: var(--accent); }
+
+    /* Tool badges */
+    .tools-info {
+      display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+      padding: 8px 14px;
+      background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+      font-size: 0.75rem; color: #57606a;
+    }
+    .tools-info span { font-weight: 600; color: #8b949e; }
+    .tool-badge {
+      background: var(--tool-bg); border: 1px solid #1e3a5f;
+      color: var(--tool-clr); border-radius: 4px;
+      padding: 2px 8px; font-size: 0.7rem; font-weight: 700;
+    }
+
+    /* Thread */
+    #thread {
+      flex: 1; overflow-y: auto; display: flex; flex-direction: column;
+      gap: 10px; padding: 4px 2px;
+    }
+
+    /* Message bubbles */
+    .msg { border-radius: 8px; padding: 12px 14px; font-size: 0.88rem; line-height: 1.6; }
+    .msg-user {
+      background: var(--user-bg); border: 1px solid #30363d;
+      border-left: 3px solid var(--accent);
+    }
+    .msg-user .who { font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      color: var(--accent); letter-spacing: .05em; margin-bottom: 4px; }
+    .msg-text {
+      background: var(--asst-bg); border: 1px solid #30363d;
+      border-left: 3px solid #8b949e;
+    }
+    .msg-text .who { font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      color: #8b949e; letter-spacing: .05em; margin-bottom: 4px; }
+    .msg-text pre { white-space: pre-wrap; word-break: break-word; }
+
+    /* Tool call bubble */
+    .msg-tool-call {
+      background: var(--tool-bg); border: 1px solid #1e3a5f;
+      border-left: 3px solid var(--tool-clr);
+    }
+    .msg-tool-call .who {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      color: var(--tool-clr); letter-spacing: .05em; margin-bottom: 6px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .tool-name-badge {
+      background: #0a1628; border: 1px solid var(--tool-clr);
+      color: var(--tool-clr); border-radius: 4px;
+      padding: 1px 8px; font-size: 0.72rem; font-weight: 700;
+    }
+    .tool-args {
+      font-family: 'Consolas','Monaco',monospace; font-size: 0.8rem;
+      color: #79c0ff; background: #0a1628; border: 1px solid #1e3a5f;
+      border-radius: 4px; padding: 8px; white-space: pre-wrap; word-break: break-word;
+    }
+
+    /* Tool result bubble */
+    .msg-tool-result {
+      background: var(--res-bg); border: 1px solid #166534;
+      border-left: 3px solid var(--res-clr);
+    }
+    .msg-tool-result.error {
+      background: #2d0f0f; border-color: #7f1d1d;
+      border-left-color: var(--err-clr);
+    }
+    .msg-tool-result .who {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      color: var(--res-clr); letter-spacing: .05em; margin-bottom: 6px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .msg-tool-result.error .who { color: var(--err-clr); }
+    .tool-result-text {
+      font-family: 'Consolas','Monaco',monospace; font-size: 0.8rem;
+      color: #7ee787; white-space: pre-wrap; word-break: break-word;
+    }
+    .msg-tool-result.error .tool-result-text { color: var(--err-clr); }
+
+    /* Thinking / loading */
+    .msg-loading {
+      background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+      padding: 10px 14px; display: flex; align-items: center; gap: 8px;
+      font-size: 0.83rem; color: #57606a;
+    }
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid var(--accent); border-top-color: transparent;
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Input row */
+    .input-row {
+      display: flex; gap: 8px; align-items: flex-end;
+      background: #161b22; border: 1px solid #30363d;
+      border-radius: 8px; padding: 10px 12px;
+    }
+    #promptInput {
+      flex: 1; min-height: 40px; max-height: 160px;
+      resize: none; background: #0d1117;
+      border: 1px solid #30363d; border-radius: 6px;
+      color: #e6edf3; font-size: 0.88rem; padding: 8px 10px;
+      font-family: inherit; outline: none; transition: border-color .2s;
+    }
+    #promptInput:focus { border-color: var(--accent); }
+    #sendBtn {
+      background: var(--accent); color: #000; border: none;
+      border-radius: 6px; padding: 9px 20px;
+      font-size: 0.88rem; font-weight: 700; cursor: pointer;
+      transition: opacity .2s; white-space: nowrap;
+    }
+    #sendBtn:disabled { opacity: .45; cursor: not-allowed; }
+    #sendBtn:hover:not(:disabled) { opacity: .85; }
+    #clearBtn {
+      background: #21262d; border: 1px solid #30363d; color: #8b949e;
+      border-radius: 6px; padding: 9px 14px; font-size: 0.85rem;
+      font-weight: 600; cursor: pointer; transition: color .15s;
+      white-space: nowrap;
+    }
+    #clearBtn:hover { color: #e6edf3; }
+
+    footer { font-size: 0.72rem; color: #484f58; padding: 8px 0 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🔧 Claude Tools Demo</h1>
+    <span class="app-tag">Agentic Tool Use · batch_tool · IBM Endpoint</span>
+  </header>
+
+  <div class="shell">
+
+    <!-- Config -->
+    <div class="config-bar">
+      <div class="cfg-field">
+        <label for="modelSel">Model</label>
+        <select id="modelSel">
+          {% for m in models %}
+          <option value="{{ m }}" {% if m == default_model %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="cfg-field" style="flex:3">
+        <label for="systemInput">System Prompt (optional)</label>
+        <input type="text" id="systemInput"
+          placeholder="You are a helpful assistant with access to date and reminder tools."
+          value="You are a helpful assistant. You have access to tools for date arithmetic and setting reminders. Use them when helpful." />
+      </div>
+    </div>
+
+    <!-- Available tools info -->
+    <div class="tools-info">
+      <span>Available tools:</span>
+      <span class="tool-badge">add_duration_to_datetime</span>
+      <span class="tool-badge">set_reminder</span>
+      <span class="tool-badge">batch_tool</span>
+    </div>
+
+    <!-- Thread -->
+    <div id="thread"></div>
+
+    <!-- Input -->
+    <div class="input-row">
+      <textarea id="promptInput" rows="1"
+        placeholder="Ask something that needs tools — e.g. 'What date is 45 days from 2025-01-01?' or 'Remind me to call John on 2025-06-01'"></textarea>
+      <button id="sendBtn" type="button">Send</button>
+      <button id="clearBtn" type="button">Clear</button>
+    </div>
+
+  </div>
+
+  <footer>Claude Code Training · IBM Internal · Tools Notebook</footer>
+
+  <script>
+    const thread      = document.getElementById("thread");
+    const promptInput = document.getElementById("promptInput");
+    const sendBtn     = document.getElementById("sendBtn");
+    const clearBtn    = document.getElementById("clearBtn");
+
+    // Auto-resize textarea
+    promptInput.addEventListener("input", () => {
+      promptInput.style.height = "auto";
+      promptInput.style.height = Math.min(promptInput.scrollHeight, 160) + "px";
+    });
+    // Send on Enter (Shift+Enter = newline)
+    promptInput.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendBtn.click(); }
+    });
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function appendUserMsg(text) {
+      const d = document.createElement("div");
+      d.className = "msg msg-user";
+      d.innerHTML = `<div class="who">You</div><div>${escHtml(text).replace(/\n/g,"<br>")}</div>`;
+      thread.appendChild(d);
+      return d;
+    }
+
+    function appendTextMsg(text) {
+      const d = document.createElement("div");
+      d.className = "msg msg-text";
+      d.innerHTML = `<div class="who">Claude</div><pre>${escHtml(text)}</pre>`;
+      thread.appendChild(d);
+      return d;
+    }
+
+    function appendToolCall(name, input, id) {
+      const d = document.createElement("div");
+      d.className = "msg msg-tool-call";
+      const pretty = JSON.stringify(input, null, 2);
+      d.innerHTML = `
+        <div class="who">
+          <span>Tool Call</span>
+          <span class="tool-name-badge">${escHtml(name)}</span>
+          <span style="color:#57606a;font-size:0.65rem">id: ${escHtml(id)}</span>
+        </div>
+        <div class="tool-args">${escHtml(pretty)}</div>`;
+      thread.appendChild(d);
+      return d;
+    }
+
+    function appendToolResult(name, result, isError) {
+      const d = document.createElement("div");
+      d.className = "msg msg-tool-result" + (isError ? " error" : "");
+      // Try to pretty-print JSON results
+      let displayResult = result;
+      try {
+        const parsed = JSON.parse(result);
+        displayResult = JSON.stringify(parsed, null, 2);
+      } catch (_) { /* not JSON, show as-is */ }
+      d.innerHTML = `
+        <div class="who">
+          <span>${isError ? "Tool Error" : "Tool Result"}</span>
+          <span class="tool-name-badge" style="${isError ? "border-color:var(--err-clr);color:var(--err-clr)" : ""}">${escHtml(name)}</span>
+        </div>
+        <div class="tool-result-text">${escHtml(displayResult)}</div>`;
+      thread.appendChild(d);
+      return d;
+    }
+
+    function appendLoading(text = "Calling Claude…") {
+      const d = document.createElement("div");
+      d.className = "msg-loading";
+      d.innerHTML = `<span class="spinner"></span><span>${text}</span>`;
+      thread.appendChild(d);
+      return d;
+    }
+
+    function scrollBottom() {
+      thread.scrollTop = thread.scrollHeight;
+    }
+
+    sendBtn.addEventListener("click", async () => {
+      const prompt = promptInput.value.trim();
+      if (!prompt) return;
+
+      const model  = document.getElementById("modelSel").value;
+      const system = document.getElementById("systemInput").value.trim();
+
+      promptInput.value = "";
+      promptInput.style.height = "auto";
+      sendBtn.disabled = true;
+
+      appendUserMsg(prompt);
+      const loader = appendLoading("Running agentic tool loop…");
+      scrollBottom();
+
+      try {
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, model, system_prompt: system }),
+        });
+
+        loader.remove();
+
+        const data = await res.json();
+
+        if (data.error) {
+          const d = document.createElement("div");
+          d.className = "msg msg-tool-result error";
+          d.innerHTML = `<div class="who"><span>Error</span></div><div class="tool-result-text">${escHtml(data.error)}</div>`;
+          thread.appendChild(d);
+          scrollBottom();
+          return;
+        }
+
+        // Render each event in order
+        for (const ev of (data.events || [])) {
+          if (ev.type === "text") {
+            appendTextMsg(ev.text);
+          } else if (ev.type === "tool_call") {
+            appendToolCall(ev.name, ev.input, ev.id);
+          } else if (ev.type === "tool_result") {
+            appendToolResult(ev.name, ev.result, ev.error);
+          }
+        }
+
+        scrollBottom();
+
+      } catch (err) {
+        loader.remove();
+        const d = document.createElement("div");
+        d.className = "msg msg-tool-result error";
+        d.innerHTML = `<div class="who"><span>Network Error</span></div><div class="tool-result-text">${escHtml(err.message)}</div>`;
+        thread.appendChild(d);
+        scrollBottom();
+      } finally {
+        sendBtn.disabled = false;
+        promptInput.focus();
+      }
+    });
+
+    clearBtn.addEventListener("click", async () => {
+      await fetch("/clear", { method: "POST" });
+      thread.innerHTML = "";
+    });
+
+    // Example prompts shown on load
+    const examples = [
+      "What date is 90 days from 2025-03-15?",
+      "Add 3 months to 2024-11-30",
+      "Set a reminder to review Q3 budget on 2025-09-01T09:00:00",
+      "What day of the week was 2 weeks before 2025-06-20? Also set a reminder for that date to prepare the report.",
+    ];
+    const hint = document.createElement("div");
+    hint.style.cssText = "font-size:.78rem;color:#484f58;padding:4px 2px 0;";
+    hint.innerHTML = "Try: " + examples.map(e =>
+      `<span style="cursor:pointer;color:#57606a;text-decoration:underline;margin-right:10px"
+        onclick="document.getElementById('promptInput').value=this.textContent;document.getElementById('promptInput').dispatchEvent(new Event('input'))"
+      >${e}</span>`
+    ).join("");
+    thread.parentNode.insertBefore(hint, thread);
+  </script>
+</body>
+</html>
