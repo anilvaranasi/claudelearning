@@ -12,6 +12,7 @@
       --tag-color:  #fbbf24;
       --pass:       #22c55e;
       --fail:       #f85149;
+      --aws:        #3b82f6;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -243,16 +244,239 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ── Tabs ── */
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid #30363d;
+      margin-bottom: 16px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: #57606a;
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 8px 18px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn:hover { color: #e6edf3; }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panel { display: none; flex-direction: column; gap: 14px; }
+    .tab-panel.active { display: flex; }
+
+    /* ── AWS Eval ── */
+    .aws-gen-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .aws-gen-row .field { display: flex; flex-direction: column; gap: 5px; }
+    .aws-gen-row label { font-size: 0.72rem; color: #57606a; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .aws-gen-row input[type="text"] { width: 240px; }
+    .aws-gen-row input[type="number"] { width: 70px; }
+
+    #genBtn, #runAwsBtn {
+      border: none;
+      border-radius: 6px;
+      padding: 9px 20px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    #genBtn { background: #21262d; border: 1px solid #30363d; color: #8b949e; }
+    #genBtn:hover:not(:disabled) { color: #e6edf3; }
+    #genBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    #runAwsBtn { background: var(--aws); color: #fff; }
+    #runAwsBtn:hover:not(:disabled) { opacity: 0.85; }
+    #runAwsBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .aws-task-row {
+      display: grid;
+      grid-template-columns: 60px 1fr 90px 80px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .fmt-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-align: center;
+      color: var(--aws);
+      background: #0c1a2e;
+      border: 1px solid #1e3a5f;
+    }
+    .aws-result-row {
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      background: #0d1117;
+    }
+    .aws-result-row.running { border-left: 3px solid var(--aws); opacity: 0.6; }
+    .aws-result-row.done    { border-left: 3px solid var(--aws); }
+    .aws-result-row.error   { border-left: 3px solid #f85149; }
+
+    .score-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0 10px;
+    }
+    .score-num {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--aws);
+      min-width: 28px;
+    }
+    .score-track {
+      flex: 1;
+      height: 6px;
+      background: #21262d;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .score-fill {
+      height: 100%;
+      background: var(--aws);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+    .sw-list {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 0.83rem;
+      line-height: 1.6;
+    }
+    .sw-list.strengths li::marker { color: var(--pass); }
+    .sw-list.weaknesses li::marker { color: var(--fail); }
+
+    #awsSummaryBar {
+      display: none;
+      align-items: center;
+      gap: 20px;
+      padding: 12px 16px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      flex-wrap: wrap;
+    }
+    #awsSummaryBar.visible { display: flex; }
+    .avg-score-display {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--aws);
+      line-height: 1;
+    }
+
+    /* ── Prompt Evaluator ── */
+    .pe-primary-btn {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+      border-radius: 6px;
+      padding: 9px 20px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .pe-primary-btn:hover:not(:disabled) { color: #fff; border-color: #7c5cd8; }
+    .pe-primary-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .pe-run-btn {
+      background: #7c5cd8;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 28px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .pe-run-btn:hover:not(:disabled) { opacity: 0.85; }
+    .pe-run-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .pe-input-row {
+      display: grid;
+      grid-template-columns: 160px 1fr 70px;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: start;
+    }
+    .pe-input-row input { font-size: 0.83rem; }
+    .pe-input-row textarea { min-height: 44px; resize: vertical; font-size: 0.83rem; }
+
+    .pe-case-card {
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      background: #0d1117;
+    }
+    .pe-case-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 0.78rem;
+      color: #57606a;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .pe-case-inputs { font-size: 0.82rem; color: #8b949e; margin-bottom: 6px; }
+    .pe-case-inputs strong { color: #c9d1d9; }
+    .pe-criteria-list {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 0.82rem;
+      color: #8b949e;
+      line-height: 1.6;
+    }
+
+    .pe-result-row {
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      background: #0d1117;
+    }
+    .pe-result-row.running { border-left: 3px solid #7c5cd8; opacity: 0.6; }
+    .pe-result-row.done    { border-left: 3px solid #7c5cd8; }
+    .pe-result-row.error   { border-left: 3px solid #f85149; }
+
     footer { margin-top: 32px; font-size: 0.75rem; color: #484f58; }
   </style>
 </head>
 <body>
   <header>
     <h1>🧪 Claude Prompt Evaluation</h1>
-    <span class="app-tag">Telugu Chandas · LLM Testing · python-dotenv</span>
+    <span class="app-tag">Telugu Chandas · AWS Grader · LLM Testing · python-dotenv</span>
   </header>
 
   <div class="container">
+
+    <!-- Tab nav -->
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="general">General Eval</button>
+      <button class="tab-btn" data-tab="aws">AWS Prompt Grader</button>
+      <button class="tab-btn" data-tab="pe">Prompt Evaluator</button>
+    </div>
+
+    <!-- ══ TAB: General Eval ══ -->
+    <div class="tab-panel active" id="tab-general">
 
     <!-- Config -->
     <div class="card">
@@ -311,11 +535,161 @@
       <div id="resultsContainer"></div>
     </div>
 
+    </div><!-- /tab-general -->
+
+    <!-- ══ TAB: AWS Prompt Grader ══ -->
+    <div class="tab-panel" id="tab-aws">
+
+      <!-- AWS Config -->
+      <div class="card">
+        <div class="card-title">AWS Eval — Dataset Generator &amp; Grader</div>
+        <div class="aws-gen-row">
+          <div class="field">
+            <label for="awsModelSel">Model</label>
+            <select id="awsModelSel">
+              {% for m in models %}
+              <option value="{{ m }}" {% if m == default_model %}selected{% endif %}>{{ m }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="awsTopic">Topic</label>
+            <input type="text" id="awsTopic" value="AWS-related tasks" placeholder="e.g. AWS S3 tasks" />
+          </div>
+          <div class="field">
+            <label for="awsN">Count</label>
+            <input type="number" id="awsN" value="3" min="1" max="10" />
+          </div>
+          <button id="genBtn" type="button">⚡ Generate Dataset</button>
+        </div>
+      </div>
+
+      <!-- AWS Task list -->
+      <div class="card" id="awsTasksCard" style="display:none">
+        <div class="card-title">Generated Tasks <span id="taskCount" style="color:#57606a"></span></div>
+        <div class="aws-task-header" style="display:grid;grid-template-columns:60px 1fr 90px 80px;gap:8px;padding-bottom:8px;border-bottom:1px solid #30363d;margin-bottom:10px;font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;color:#57606a;font-weight:600">
+          <span>Format</span><span>Task</span><span></span><span></span>
+        </div>
+        <div id="awsTasksContainer"></div>
+        <button class="add-btn" id="addAwsTaskBtn">+ Add Task Manually</button>
+      </div>
+
+      <button id="runAwsBtn" type="button" style="display:none">▶ Run AWS Eval</button>
+
+      <!-- AWS Summary -->
+      <div id="awsSummaryBar">
+        <div>
+          <div class="sum-label">Avg Score</div>
+          <div class="avg-score-display" id="awsAvgScore">—</div>
+        </div>
+        <div><div class="sum-label">Cases Run</div><div style="color:#8b949e;font-size:1.1rem;font-weight:700" id="awsCasesRun">—</div></div>
+        <div><div class="sum-label">Model</div><div style="color:#8b949e" id="awsSumModel">—</div></div>
+      </div>
+
+      <!-- AWS Results -->
+      <div class="card" id="awsResultsCard" style="display:none">
+        <div class="card-title">Results</div>
+        <div id="awsResultsContainer"></div>
+      </div>
+
+    </div><!-- /tab-aws -->
+
+    <!-- ══ TAB: Prompt Evaluator (from 001_prompting.ipynb) ══ -->
+    <div class="tab-panel" id="tab-pe">
+
+      <!-- Step 1 — Task definition -->
+      <div class="card">
+        <div class="card-title">Step 1 — Define Your Task &amp; Prompt Inputs</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+          <div class="field" style="flex:2;min-width:200px">
+            <label for="peModelSel">Model</label>
+            <select id="peModelSel">
+              {% for m in models %}
+              <option value="{{ m }}" {% if m == default_model %}selected{% endif %}>{{ m }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field" style="flex:1;min-width:80px">
+            <label for="peNumCases">Cases</label>
+            <input type="number" id="peNumCases" value="3" min="1" max="10" style="width:70px" />
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label for="peTaskDesc">Task Description <span style="color:#57606a;font-weight:400;text-transform:none">(describe what the prompt should accomplish)</span></label>
+          <textarea id="peTaskDesc" style="min-height:72px;resize:vertical" placeholder="e.g. Write a compact, concise 1-day meal plan for a single athlete"></textarea>
+        </div>
+        <div class="field" style="margin-bottom:8px">
+          <label>Prompt Input Variables <span style="color:#57606a;font-weight:400;text-transform:none">(variables your prompt template will use)</span></label>
+          <div id="peInputsContainer"></div>
+          <button class="add-btn" id="peAddInputBtn" style="margin-top:4px">+ Add Variable</button>
+        </div>
+      </div>
+
+      <!-- Step 2 — Generate dataset -->
+      <div style="display:flex;gap:10px;align-items:center">
+        <button id="peGenDatasetBtn" class="pe-primary-btn" type="button">⚡ Generate Dataset</button>
+        <span id="peGenStatus" style="font-size:0.82rem;color:#57606a"></span>
+      </div>
+
+      <!-- Dataset card -->
+      <div class="card" id="peDatasetCard" style="display:none">
+        <div class="card-title">Generated Dataset <span id="peDatasetCount" style="color:#57606a"></span></div>
+        <div id="peDatasetContainer"></div>
+      </div>
+
+      <!-- Step 3 — Define prompt template + extra criteria -->
+      <div class="card" id="pePromptCard" style="display:none">
+        <div class="card-title">Step 2 — Your Prompt Template</div>
+        <div class="field" style="margin-bottom:12px">
+          <label>Prompt Template <span style="color:#57606a;font-weight:400;text-transform:none">(use <code style="background:#21262d;padding:2px 5px;border-radius:3px;font-size:0.8rem">{variable_name}</code> for your input variables)</span></label>
+          <textarea id="pePromptTemplate" style="min-height:140px;resize:vertical;font-family:'Consolas','Monaco',monospace;font-size:0.83rem" placeholder="e.g. Generate a one-day meal plan for an athlete.&#10;&#10;Height: {height}&#10;Weight: {weight}&#10;Goal: {goal}&#10;Restrictions: {restrictions}"></textarea>
+        </div>
+        <div class="field">
+          <label for="peExtraCriteria">Extra Mandatory Criteria <span style="color:#57606a;font-weight:400;text-transform:none">(optional — violations auto-fail with score ≤3)</span></label>
+          <textarea id="peExtraCriteria" style="min-height:60px;resize:vertical" placeholder="e.g. The output must include daily caloric total and macronutrient breakdown"></textarea>
+        </div>
+      </div>
+
+      <button id="peRunEvalBtn" class="pe-run-btn" type="button" style="display:none">▶ Run Evaluation</button>
+
+      <!-- PE Summary -->
+      <div id="peSummaryBar" style="display:none;align-items:center;gap:20px;padding:12px 16px;background:#161b22;border:1px solid #30363d;border-radius:8px;font-size:0.85rem;flex-wrap:wrap">
+        <div>
+          <div class="sum-label">Avg Score</div>
+          <div style="font-size:2rem;font-weight:700;color:#7c5cd8;line-height:1" id="peAvgScore">—</div>
+        </div>
+        <div><div class="sum-label">Pass Rate (≥7)</div><div style="color:#22c55e;font-size:1.1rem;font-weight:700" id="pePassRate">—</div></div>
+        <div><div class="sum-label">Cases</div><div style="color:#8b949e;font-size:1.1rem;font-weight:700" id="peCasesRun">—</div></div>
+        <div><div class="sum-label">Model</div><div style="color:#8b949e" id="peSumModel">—</div></div>
+        <div style="margin-left:auto">
+          <button id="peExportBtn" class="pe-primary-btn" type="button" style="display:none">⬇ Export HTML Report</button>
+        </div>
+      </div>
+
+      <!-- PE Results -->
+      <div class="card" id="peResultsCard" style="display:none">
+        <div class="card-title">Evaluation Results</div>
+        <div id="peResultsContainer"></div>
+      </div>
+
+    </div><!-- /tab-pe -->
+
   </div>
 
   <footer>Claude Code Training · IBM Internal</footer>
 
   <script>
+    // ── Tab switching ──────────────────────────────────────────────────────────
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+      });
+    });
+
+    // ── General Eval ──────────────────────────────────────────────────────────
     const casesContainer  = document.getElementById("casesContainer");
     const resultsContainer = document.getElementById("resultsContainer");
     const addBtn          = document.getElementById("addBtn");
@@ -518,6 +892,467 @@
       summaryBar.classList.add("visible");
       runBtn.disabled = false;
     });
+
+    // ── AWS Prompt Grader ─────────────────────────────────────────────────────
+    const genBtn           = document.getElementById("genBtn");
+    const runAwsBtn        = document.getElementById("runAwsBtn");
+    const awsTasksCard     = document.getElementById("awsTasksCard");
+    const awsTasksContainer= document.getElementById("awsTasksContainer");
+    const addAwsTaskBtn    = document.getElementById("addAwsTaskBtn");
+    const awsResultsCard   = document.getElementById("awsResultsCard");
+    const awsResultsContainer = document.getElementById("awsResultsContainer");
+    const awsSummaryBar    = document.getElementById("awsSummaryBar");
+
+    function makeAwsTaskRow(task = "", format = "python") {
+      const row = document.createElement("div");
+      row.className = "aws-task-row";
+      row.innerHTML = `
+        <select class="aws-fmt">
+          <option value="python"  ${format==='python'  ? 'selected':''}>Python</option>
+          <option value="json"    ${format==='json'    ? 'selected':''}>JSON</option>
+          <option value="regex"   ${format==='regex'   ? 'selected':''}>Regex</option>
+        </select>
+        <textarea class="aws-task" style="min-height:54px;resize:vertical;font-size:0.83rem" placeholder="Describe the task…">${task}</textarea>
+        <div style="font-size:0.75rem;color:#57606a;text-align:center">Will be graded<br>1–10 by Claude</div>
+        <button class="del-btn" type="button">✕</button>
+      `;
+      row.querySelector(".del-btn").addEventListener("click", () => {
+        row.remove();
+        updateRunBtn();
+      });
+      awsTasksContainer.appendChild(row);
+      updateRunBtn();
+    }
+
+    function updateRunBtn() {
+      const hasRows = awsTasksContainer.querySelectorAll(".aws-task-row").length > 0;
+      runAwsBtn.style.display = hasRows ? "inline-block" : "none";
+      awsTasksCard.style.display = hasRows ? "block" : "none";
+      document.getElementById("taskCount").textContent =
+        `(${awsTasksContainer.querySelectorAll(".aws-task-row").length} tasks)`;
+    }
+
+    addAwsTaskBtn.addEventListener("click", () => makeAwsTaskRow());
+
+    genBtn.addEventListener("click", async () => {
+      const model = document.getElementById("awsModelSel").value;
+      const topic = document.getElementById("awsTopic").value.trim() || "AWS-related tasks";
+      const n     = parseInt(document.getElementById("awsN").value) || 3;
+
+      genBtn.disabled = true;
+      genBtn.textContent = "Generating…";
+
+      try {
+        const res = await fetch("/generate_dataset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model, topic, n }),
+        });
+        const data = await res.json();
+        if (data.error) { alert("Error: " + data.error); return; }
+
+        // Clear old tasks and load new ones
+        awsTasksContainer.innerHTML = "";
+        data.dataset.forEach(item => makeAwsTaskRow(item.task || item.prompt || "", item.format || "python"));
+        awsTasksCard.style.display = "block";
+        runAwsBtn.style.display = "inline-block";
+        document.getElementById("taskCount").textContent = `(${data.dataset.length} tasks)`;
+      } catch (err) {
+        alert("Network error: " + err.message);
+      } finally {
+        genBtn.disabled = false;
+        genBtn.textContent = "⚡ Generate Dataset";
+      }
+    });
+
+    function makeAwsResultRow(index, status) {
+      const row = document.createElement("div");
+      row.className = `aws-result-row ${status}`;
+      row.id = `aws-result-${index}`;
+      if (status === "running") {
+        row.innerHTML = `
+          <div class="result-header">
+            <span class="badge run"><span class="spinner"></span>Running…</span>
+            <span style="color:#57606a;font-size:0.83rem">Task ${index + 1}</span>
+          </div>`;
+      }
+      return row;
+    }
+
+    function fillAwsResultRow(row, data) {
+      if (data.error) {
+        row.className = "aws-result-row error";
+        row.innerHTML = `
+          <div class="result-header">
+            <span class="badge error">Error</span>
+            <span style="color:#f85149;font-size:0.83rem">${data.error}</span>
+          </div>
+          <div class="result-grid">
+            <span class="lbl">Task</span><span class="val">${data.task || "—"}</span>
+          </div>`;
+        return;
+      }
+      row.className = "aws-result-row done";
+      const pct = Math.round((data.score / 10) * 100);
+      const stList = (data.strengths || []).map(s => `<li>${s}</li>`).join("") || "<li>—</li>";
+      const wkList = (data.weaknesses || []).map(w => `<li>${w}</li>`).join("") || "<li>—</li>";
+      row.innerHTML = `
+        <div class="result-header" style="margin-bottom:6px">
+          <span class="badge run" style="background:#0c1a2e;color:var(--aws);border-color:#1e3a5f">Task ${parseInt(row.id.split('-')[2])+1}</span>
+          <span style="color:#57606a;font-size:0.78rem">${data.model}</span>
+        </div>
+        <div class="score-bar">
+          <div class="score-num">${data.score}<span style="font-size:0.7rem;color:#57606a">/10</span></div>
+          <div class="score-track"><div class="score-fill" style="width:${pct}%"></div></div>
+        </div>
+        <div class="result-grid">
+          <span class="lbl">Task</span>      <span class="val">${data.task}</span>
+          <span class="lbl">Response</span>  <span class="val">${data.output}</span>
+          <span class="lbl">Reasoning</span> <span class="val reasoning">${data.reasoning}</span>
+          <span class="lbl">Strengths</span>
+          <span class="val"><ul class="sw-list strengths">${stList}</ul></span>
+          <span class="lbl">Weaknesses</span>
+          <span class="val"><ul class="sw-list weaknesses">${wkList}</ul></span>
+        </div>`;
+    }
+
+    runAwsBtn.addEventListener("click", async () => {
+      const taskRows = [...awsTasksContainer.querySelectorAll(".aws-task-row")];
+      const cases = taskRows.map(r => ({
+        task:   r.querySelector(".aws-task").value.trim(),
+        format: r.querySelector(".aws-fmt").value,
+      })).filter(c => c.task);
+
+      if (cases.length === 0) return;
+
+      const model = document.getElementById("awsModelSel").value;
+      runAwsBtn.disabled = true;
+      awsResultsContainer.innerHTML = "";
+      awsResultsCard.style.display = "block";
+      awsSummaryBar.classList.remove("visible");
+
+      const resultRows = cases.map((_, i) => {
+        const row = makeAwsResultRow(i, "running");
+        awsResultsContainer.appendChild(row);
+        return row;
+      });
+
+      const scores = [];
+
+      for (let i = 0; i < cases.length; i++) {
+        try {
+          const res = await fetch("/run_aws_eval", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ task: cases[i].task, model }),
+          });
+          const data = await res.json();
+          fillAwsResultRow(resultRows[i], data);
+          if (!data.error && data.score != null) scores.push(data.score);
+        } catch (err) {
+          fillAwsResultRow(resultRows[i], { error: err.message, task: cases[i].task });
+        }
+        if (i < cases.length - 1) await new Promise(r => setTimeout(r, 2000));
+      }
+
+      // Show summary
+      const avg = scores.length > 0 ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : "—";
+      document.getElementById("awsAvgScore").textContent  = avg;
+      document.getElementById("awsCasesRun").textContent  = scores.length;
+      document.getElementById("awsSumModel").textContent  = model;
+      awsSummaryBar.classList.add("visible");
+      runAwsBtn.disabled = false;
+    });
+
+    // ── Prompt Evaluator ──────────────────────────────────────────────────────
+    const peInputsContainer  = document.getElementById("peInputsContainer");
+    const peDatasetCard      = document.getElementById("peDatasetCard");
+    const peDatasetContainer = document.getElementById("peDatasetContainer");
+    const pePromptCard       = document.getElementById("pePromptCard");
+    const peRunEvalBtn       = document.getElementById("peRunEvalBtn");
+    const peSummaryBar       = document.getElementById("peSummaryBar");
+    const peResultsCard      = document.getElementById("peResultsCard");
+    const peResultsContainer = document.getElementById("peResultsContainer");
+    const peExportBtn        = document.getElementById("peExportBtn");
+
+    // Stored dataset + results for export
+    let peDataset = [];
+    let peResults = [];
+
+    function makePeInputRow(name = "", desc = "") {
+      const row = document.createElement("div");
+      row.className = "pe-input-row";
+      row.innerHTML = `
+        <input type="text" class="pe-var-name" placeholder="variable_name" value="${name}" />
+        <textarea class="pe-var-desc" placeholder="Description of this variable…">${desc}</textarea>
+        <button class="del-btn" type="button">✕</button>
+      `;
+      row.querySelector(".del-btn").addEventListener("click", () => row.remove());
+      peInputsContainer.appendChild(row);
+    }
+
+    // Start with one blank input row
+    makePeInputRow();
+    document.getElementById("peAddInputBtn").addEventListener("click", () => makePeInputRow());
+
+    function getPeInputsSpec() {
+      const spec = {};
+      peInputsContainer.querySelectorAll(".pe-input-row").forEach(r => {
+        const name = r.querySelector(".pe-var-name").value.trim();
+        const desc = r.querySelector(".pe-var-desc").value.trim();
+        if (name) spec[name] = desc || name;
+      });
+      return spec;
+    }
+
+    // ── Generate dataset: ideas → test cases in parallel ──
+    document.getElementById("peGenDatasetBtn").addEventListener("click", async () => {
+      const taskDesc  = document.getElementById("peTaskDesc").value.trim();
+      const numCases  = parseInt(document.getElementById("peNumCases").value) || 3;
+      const model     = document.getElementById("peModelSel").value;
+      const inputsSpec= getPeInputsSpec();
+
+      if (!taskDesc) { alert("Please enter a task description first."); return; }
+
+      const genBtn   = document.getElementById("peGenDatasetBtn");
+      const genStatus= document.getElementById("peGenStatus");
+
+      genBtn.disabled = true;
+      genBtn.textContent = "Generating ideas…";
+      genStatus.textContent = "";
+      peDatasetContainer.innerHTML = "";
+      peDatasetCard.style.display = "none";
+      pePromptCard.style.display  = "none";
+      peRunEvalBtn.style.display  = "none";
+      peDataset = [];
+
+      try {
+        // Step 1: generate ideas
+        const ideasRes = await fetch("/pe/generate_ideas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ task_description: taskDesc, prompt_inputs_spec: inputsSpec, num_cases: numCases, model }),
+        });
+        const ideasData = await ideasRes.json();
+        if (ideasData.error) { alert("Error generating ideas: " + ideasData.error); return; }
+
+        const ideas = ideasData.ideas;
+        genStatus.textContent = `Got ${ideas.length} ideas — generating test cases…`;
+        genBtn.textContent = "Generating test cases…";
+
+        // Step 2: generate test cases sequentially (avoid rate limits)
+        peDatasetContainer.innerHTML = "";
+        peDatasetCard.style.display = "block";
+        document.getElementById("peDatasetCount").textContent = `(0 / ${ideas.length})`;
+
+        for (let i = 0; i < ideas.length; i++) {
+          // Show placeholder
+          const placeholder = document.createElement("div");
+          placeholder.className = "pe-case-card";
+          placeholder.style.opacity = "0.5";
+          placeholder.innerHTML = `<div class="pe-case-header"><span class="badge run"><span class="spinner"></span>Generating case ${i+1}…</span><span>${ideas[i].substring(0,80)}</span></div>`;
+          peDatasetContainer.appendChild(placeholder);
+
+          try {
+            const tcRes = await fetch("/pe/generate_test_case", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ task_description: taskDesc, idea: ideas[i], prompt_inputs_spec: inputsSpec, model }),
+            });
+            const tcData = await tcRes.json();
+            if (tcData.error) {
+              placeholder.innerHTML = `<div class="pe-case-header"><span class="badge error">Error</span><span style="color:#f85149">${tcData.error}</span></div>`;
+              continue;
+            }
+            const tc = tcData.test_case;
+            peDataset.push(tc);
+            placeholder.style.opacity = "1";
+            placeholder.innerHTML = renderPeCaseCard(i + 1, tc);
+          } catch(err) {
+            placeholder.innerHTML = `<div class="pe-case-header"><span class="badge error">Network error</span><span style="color:#f85149">${err.message}</span></div>`;
+          }
+
+          document.getElementById("peDatasetCount").textContent = `(${peDataset.length} / ${ideas.length})`;
+          if (i < ideas.length - 1) await new Promise(r => setTimeout(r, 1500));
+        }
+
+        genStatus.textContent = `Dataset ready — ${peDataset.length} test cases generated.`;
+
+        if (peDataset.length > 0) {
+          pePromptCard.style.display  = "block";
+          peRunEvalBtn.style.display  = "inline-block";
+          // Pre-fill template with variable placeholders based on inputsSpec keys
+          const vars = Object.keys(inputsSpec);
+          if (vars.length > 0 && !document.getElementById("pePromptTemplate").value.trim()) {
+            document.getElementById("pePromptTemplate").value =
+              taskDesc + "\n\n" + vars.map(v => v + ": {" + v + "}").join("\n");
+          }
+        }
+
+      } catch (err) {
+        genStatus.textContent = "Network error: " + err.message;
+      } finally {
+        genBtn.disabled = false;
+        genBtn.textContent = "⚡ Generate Dataset";
+      }
+    });
+
+    function renderPeCaseCard(num, tc) {
+      const inputsHtml = Object.entries(tc.prompt_inputs || {})
+        .map(([k, v]) => `<strong>${k}:</strong> ${String(v).substring(0, 120)}`)
+        .join(" &nbsp;·&nbsp; ");
+      const criteriaHtml = (tc.solution_criteria || [])
+        .map(c => `<li>${c}</li>`).join("");
+      return `
+        <div class="pe-case-header">
+          <span style="background:#1a0f2e;color:#7c5cd8;border:1px solid #3d1f7a;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:700">CASE ${num}</span>
+          <span style="color:#c9d1d9">${(tc.scenario || "").substring(0, 90)}</span>
+        </div>
+        <div class="pe-case-inputs">${inputsHtml}</div>
+        <ul class="pe-criteria-list">${criteriaHtml}</ul>
+      `;
+    }
+
+    // ── Run evaluation ──
+    peRunEvalBtn.addEventListener("click", async () => {
+      if (peDataset.length === 0) return;
+
+      const promptTemplate = document.getElementById("pePromptTemplate").value.trim();
+      const extraCriteria  = document.getElementById("peExtraCriteria").value.trim();
+      const model          = document.getElementById("peModelSel").value;
+
+      if (!promptTemplate) { alert("Please enter your prompt template first."); return; }
+
+      peRunEvalBtn.disabled = true;
+      peResults = [];
+      peResultsContainer.innerHTML = "";
+      peResultsCard.style.display = "block";
+      peSummaryBar.style.display  = "none";
+      peExportBtn.style.display   = "none";
+
+      // Create placeholder rows
+      const resultRows = peDataset.map((_, i) => {
+        const row = document.createElement("div");
+        row.className = "pe-result-row running";
+        row.id = `pe-res-${i}`;
+        row.innerHTML = `<div class="result-header"><span class="badge run"><span class="spinner"></span>Running…</span><span style="color:#57606a;font-size:0.83rem">Case ${i+1}</span></div>`;
+        peResultsContainer.appendChild(row);
+        return row;
+      });
+
+      const scores = [];
+
+      for (let i = 0; i < peDataset.length; i++) {
+        try {
+          const res = await fetch("/pe/run_test_case", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              test_case:       peDataset[i],
+              prompt_template: promptTemplate,
+              extra_criteria:  extraCriteria,
+              model,
+            }),
+          });
+          const data = await res.json();
+          fillPeResultRow(resultRows[i], i + 1, data);
+          if (!data.error && data.score != null) {
+            scores.push(data.score);
+            peResults.push(data);
+          }
+        } catch (err) {
+          fillPeResultRow(resultRows[i], i + 1, { error: err.message });
+        }
+        if (i < peDataset.length - 1) await new Promise(r => setTimeout(r, 2000));
+      }
+
+      // Summary (mirrors notebook: avg score + pass rate ≥7)
+      if (scores.length > 0) {
+        const avg      = (scores.reduce((a,b)=>a+b,0) / scores.length).toFixed(1);
+        const passing  = scores.filter(s => s >= 7).length;
+        const passRate = Math.round((passing / scores.length) * 100);
+        document.getElementById("peAvgScore").textContent  = avg + " / 10";
+        document.getElementById("pePassRate").textContent  = passRate + "%";
+        document.getElementById("peCasesRun").textContent  = scores.length;
+        document.getElementById("peSumModel").textContent  = model;
+        peSummaryBar.style.display = "flex";
+        peExportBtn.style.display  = "inline-block";
+      }
+
+      peRunEvalBtn.disabled = false;
+    });
+
+    // ── Export HTML Report ──
+    peExportBtn.addEventListener("click", async () => {
+      if (peResults.length === 0) return;
+      peExportBtn.disabled = true;
+      peExportBtn.textContent = "Exporting…";
+      try {
+        const res = await fetch("/pe/export_report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ results: peResults }),
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          alert("Export error: " + (err.error || res.statusText));
+          return;
+        }
+        // Trigger download
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement("a");
+        a.href     = url;
+        a.download = "prompt_eval_report.html";
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert("Export failed: " + err.message);
+      } finally {
+        peExportBtn.disabled = false;
+        peExportBtn.textContent = "⬇ Export HTML Report";
+      }
+    });
+
+    function fillPeResultRow(row, num, data) {
+      if (data.error) {
+        row.className = "pe-result-row error";
+        row.innerHTML = `
+          <div class="result-header">
+            <span class="badge error">Error</span>
+            <span style="color:#f85149;font-size:0.83rem">${data.error}</span>
+          </div>`;
+        return;
+      }
+      row.className = "pe-result-row done";
+      const tc  = data.test_case || {};
+      const pct = Math.round((data.score / 10) * 100);
+      const scoreColour = data.score >= 8 ? "#22c55e" : data.score >= 6 ? "#f59e0b" : "#f85149";
+      const stList = (data.strengths  || []).map(s => `<li>${s}</li>`).join("") || "<li>—</li>";
+      const wkList = (data.weaknesses || []).map(w => `<li>${w}</li>`).join("") || "<li>—</li>";
+      const inputsHtml = Object.entries(tc.prompt_inputs || {})
+        .map(([k,v]) => `<strong>${k}:</strong> ${String(v).substring(0,100)}`).join("  ·  ");
+      const criteriaHtml = (tc.solution_criteria || []).map(c => `<li>${c}</li>`).join("");
+
+      row.innerHTML = `
+        <div class="result-header" style="margin-bottom:8px">
+          <span style="background:#1a0f2e;color:#7c5cd8;border:1px solid #3d1f7a;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:700">CASE ${num}</span>
+          <span style="color:#8b949e;font-size:0.78rem">${(tc.scenario || "").substring(0,80)}</span>
+        </div>
+        <div class="score-bar" style="margin-bottom:10px">
+          <div class="score-num" style="color:${scoreColour}">${data.score}<span style="font-size:0.7rem;color:#57606a">/10</span></div>
+          <div class="score-track"><div class="score-fill pe-score-fill" style="width:${pct}%;background:${scoreColour}"></div></div>
+        </div>
+        <div class="result-grid">
+          <span class="lbl">Scenario</span>   <span class="val">${tc.scenario || "—"}</span>
+          <span class="lbl">Inputs</span>      <span class="val" style="font-size:0.8rem">${inputsHtml || "—"}</span>
+          <span class="lbl">Criteria</span>    <span class="val"><ul class="pe-criteria-list">${criteriaHtml}</ul></span>
+          <span class="lbl">Output</span>      <span class="val"><pre style="background:#161b22;border:1px solid #30363d;border-radius:4px;padding:8px;font-size:0.78rem;white-space:pre-wrap;word-break:break-word">${data.output}</pre></span>
+          <span class="lbl">Reasoning</span>   <span class="val reasoning">${data.reasoning}</span>
+          <span class="lbl">Strengths</span>   <span class="val"><ul class="sw-list strengths">${stList}</ul></span>
+          <span class="lbl">Weaknesses</span>  <span class="val"><ul class="sw-list weaknesses">${wkList}</ul></span>
+        </div>`;
+    }
   </script>
 </body>
 </html>
