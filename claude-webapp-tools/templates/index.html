@@ -187,7 +187,7 @@
 <body>
   <header>
     <h1>🔧 Claude Tools Demo</h1>
-    <span class="app-tag">Agentic Tool Use · batch_tool · IBM Endpoint</span>
+    <span class="app-tag">Agentic Tool Use · 4 Tools · IBM Endpoint</span>
   </header>
 
   <div class="shell">
@@ -206,13 +206,14 @@
         <label for="systemInput">System Prompt (optional)</label>
         <input type="text" id="systemInput"
           placeholder="You are a helpful assistant with access to date and reminder tools."
-          value="You are a helpful assistant. You have access to tools for date arithmetic and setting reminders. Use them when helpful." />
+          value="You are a helpful assistant. You have access to tools: get the current datetime, add durations to dates, set reminders, and invoke multiple tools at once via batch_tool. Use them whenever helpful." />
       </div>
     </div>
 
     <!-- Available tools info -->
     <div class="tools-info">
       <span>Available tools:</span>
+      <span class="tool-badge">get_current_datetime</span>
       <span class="tool-badge">add_duration_to_datetime</span>
       <span class="tool-badge">set_reminder</span>
       <span class="tool-badge">batch_tool</span>
@@ -385,7 +386,8 @@
 
     // Example prompts shown on load
     const examples = [
-      "What date is 90 days from 2025-03-15?",
+      "What is today's date and time?",
+      "What date is 90 days from today?",
       "Add 3 months to 2024-11-30",
       "Set a reminder to review Q3 budget on 2025-09-01T09:00:00",
       "What day of the week was 2 weeks before 2025-06-20? Also set a reminder for that date to prepare the report.",

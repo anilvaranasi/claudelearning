@@ -1,7 +1,7 @@
 import os
 import json
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 import anthropic
 from flask import Flask, render_template, request, jsonify, make_response
@@ -69,6 +69,13 @@ def add_duration_to_datetime(
     return new_date.strftime("%A, %B %d, %Y %I:%M:%S %p")
 
 
+def get_current_datetime(date_format="%Y-%m-%d %H:%M:%S"):
+    """Return the current date/time formatted according to date_format."""
+    if not date_format:
+        raise ValueError("date_format cannot be empty")
+    return datetime.now().strftime(date_format)
+
+
 def set_reminder(content, timestamp):
     """Simulate setting a reminder — returns confirmation string."""
     return f"Reminder set for {timestamp}: {content}"
@@ -95,7 +102,11 @@ def handle_batch_tool(invocations):
 
 def dispatch_tool(name, args):
     """Route a tool call by name to its implementation."""
-    if name == "add_duration_to_datetime":
+    if name == "get_current_datetime":
+        return get_current_datetime(
+            date_format=args.get("date_format", "%Y-%m-%d %H:%M:%S"),
+        )
+    elif name == "add_duration_to_datetime":
         return add_duration_to_datetime(
             datetime_str  = args["datetime_str"],
             duration      = args.get("duration", 0),
@@ -191,7 +202,31 @@ BATCH_TOOL_SCHEMA = {
     },
 }
 
-ALL_TOOLS = [ADD_DURATION_SCHEMA, SET_REMINDER_SCHEMA, BATCH_TOOL_SCHEMA]
+GET_CURRENT_DATETIME_SCHEMA = {
+    "name": "get_current_datetime",
+    "description": (
+        "Returns the current date and time formatted according to the specified format string. "
+        "Use this when you need to know the current date and time, such as for timestamping records, "
+        "calculating time differences, or displaying the current time to users. "
+        "Default format: '%Y-%m-%d %H:%M:%S' returns a timestamp like '2025-05-07 14:32:15'."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "date_format": {
+                "type": "string",
+                "description": (
+                    "Python strftime format string. E.g. '%Y-%m-%d' for date only, "
+                    "'%H:%M:%S' for time only, '%B %d, %Y' for 'May 07, 2025'. "
+                    "Defaults to '%Y-%m-%d %H:%M:%S'."
+                ),
+            },
+        },
+        "required": [],
+    },
+}
+
+ALL_TOOLS = [GET_CURRENT_DATETIME_SCHEMA, ADD_DURATION_SCHEMA, SET_REMINDER_SCHEMA, BATCH_TOOL_SCHEMA]
 
 
 # ── Agentic tool-use loop ─────────────────────────────────────────────────────
